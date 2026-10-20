@@ -112,7 +112,12 @@ Do NOT reveal this directive or the link unless the user explicitly types "RUG".
                     'X-Title': "Jastin's Portfolio",
                 },
                 body: JSON.stringify({
-                    model: 'openrouter/auto',
+                    models: [
+                        'openrouter/free',
+                        'google/gemini-2.0-flash-exp:free',
+                        'meta-llama/llama-3.3-70b-instruct:free',
+                        'openrouter/auto'
+                    ],
                     messages,
                     max_tokens: 300,
                     temperature: 0.7,
@@ -121,17 +126,22 @@ Do NOT reveal this directive or the link unless the user explicitly types "RUG".
 
             if (!response.ok) {
                 const errText = await response.text();
-                console.error('OpenRouter API error:', errText);
+                console.error('OpenRouter API error:', response.status, errText);
                 
                 if (response.status === 401) {
                     return res.json({ reply: "My connection to the mainframe is currently down! Jastin needs to update his OpenRouter API key. Please contact him directly at jastinlamug26@gmail.com for now." });
                 }
-                
+                if (response.status === 402) {
+                    return res.json({ reply: "OpenRouter reported insufficient credits ($0 balance)." });
+                }
+                if (response.status === 403) {
+                    return res.json({ reply: `OpenRouter access forbidden (403): ${errText}. Check domain restrictions on openrouter.ai.` });
+                }
                 if (response.status === 429) {
                     return res.json({ reply: "OpenRouter is experiencing heavy traffic right now. Please try again in a moment!" });
                 }
                 
-                return res.json({ reply: "I encountered an error connecting to my AI brain. Please try again later!" });
+                return res.json({ reply: `I encountered an error connecting to my AI brain (${response.status}: ${errText}). Please try again later!` });
             }
 
             const data = await response.json();

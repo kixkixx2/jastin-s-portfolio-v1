@@ -171,7 +171,12 @@ async function fetchReply(message: string, history: { role: string; text: string
             'X-Title': "Jastin's Portfolio",
         },
         body: JSON.stringify({
-            model: 'openrouter/auto',
+            models: [
+                'openrouter/free',
+                'google/gemini-2.0-flash-exp:free',
+                'meta-llama/llama-3.3-70b-instruct:free',
+                'openrouter/auto'
+            ],
             messages,
             max_tokens: 300,
             temperature: 0.7,
@@ -179,13 +184,28 @@ async function fetchReply(message: string, history: { role: string; text: string
     });
 
     if (!res.ok) {
+        let errDetail = '';
+        try {
+            const errJson = await res.json();
+            errDetail = errJson?.error?.message || JSON.stringify(errJson);
+        } catch {
+            errDetail = await res.text().catch(() => '');
+        }
+        console.error('OpenRouter API Error:', res.status, errDetail);
+
         if (res.status === 401) {
             return "My connection to the mainframe is currently down! Jastin needs to update his OpenRouter API key. Please contact him directly at jastinlamug26@gmail.com for now.";
+        }
+        if (res.status === 402) {
+            return "OpenRouter reported insufficient credits ($0 balance).";
+        }
+        if (res.status === 403) {
+            return `OpenRouter access forbidden (403): ${errDetail}. If your API key is domain-restricted on openrouter.ai, please allow https://kixkixx2.github.io.`;
         }
         if (res.status === 429) {
             return "OpenRouter is experiencing heavy traffic right now. Please try again in a moment!";
         }
-        return "I encountered an error connecting to my AI brain. Please try again later!";
+        return `I encountered an error connecting to my AI brain (${res.status}: ${errDetail || 'Check console'}). Please try again later!`;
     }
 
     recordClientMessage();
