@@ -173,9 +173,8 @@ async function fetchReply(message: string, history: { role: string; text: string
         body: JSON.stringify({
             models: [
                 'openrouter/free',
-                'google/gemini-2.0-flash-exp:free',
                 'meta-llama/llama-3.3-70b-instruct:free',
-                'openrouter/auto'
+                'google/gemini-2.0-flash-exp:free'
             ],
             messages,
             max_tokens: 300,
